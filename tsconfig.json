@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "outDir": "dist",
+    "sourceMap": false,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "types": ["reflect-metadata", "node"],
+    "lib": ["es6", "dom"],
+    "baseUrl": "./src",
+    "resolveJsonModule": true,
+    "paths": {
+      "*": [
+        "node_modules/*",
+      ]
+    },
+    "typeRoots": [ "src/types", "node_modules/@types" ],
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.ispec.ts",
+    "**/*.js",
+  ]
+}
