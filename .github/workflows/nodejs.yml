@@ -27,14 +27,27 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
     - run: npm run create-stl
+    - run: tar -cjf stl.tar.bz2 *.stl
+
+
+    - name: Create tag
+      id: create_tag
+      run: |
+        if [[ "${{ github.event_name }}" == "schedule" ]]; then
+          tag=builds-$(date +%Y%m%d-%H%M%S)
+        else
+          tag=$(basename "${{ github.ref }}")
+        fi
+        echo "::set-output name=tag::$tag"
+
     - name: Create Draft Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: abc
-        release_name: def
+        tag_name: ${{ steps.create_tag.outputs.tag }}
+        release_name: ${{ steps.create_tag.outputs.tag }}
         draft: true
         prerelease: false
 
@@ -43,9 +56,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./my-artifact.zip
-        asset_name: my-artifact.zip
-        asset_content_type: application/zip
+        asset_path: ./stl.tar.bz2
+        asset_name: stl.tar.bz2
+        asset_content_type: application/x-tar
 
     - uses: eregon/publish-release@v1
       env:
