@@ -8,16 +8,30 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
-    "types": ["reflect-metadata", "node"],
-    "lib": ["es6", "dom"],
+    "types": [
+      "reflect-metadata",
+      "node"
+    ],
+    "lib": [
+      "es6",
+      "dom"
+    ],
     "baseUrl": "./src",
     "resolveJsonModule": true,
-    "paths": {
-      "*": [
-        "node_modules/*",
-      ]
-    },
-    "typeRoots": [ "src/types", "node_modules/@types" ],
+    "typeRoots": [
+      "src/types",
+      "node_modules/@types"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": false,
+    "moduleResolution": "node",
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react"
   },
   "include": [
     "src/**/*.ts"
@@ -25,6 +39,6 @@
   "exclude": [
     "**/*.spec.ts",
     "**/*.ispec.ts",
-    "**/*.js",
+    "**/*.js"
   ]
 }

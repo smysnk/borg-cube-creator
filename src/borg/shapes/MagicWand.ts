@@ -62,7 +62,7 @@ export default class Shape {
     
     // Recreate bitmap if the size has changed
     if (this.width !== widthOld || this.height !== heightOld) {
-      let bitmapNew = [];
+      let bitmapNew: any = [];
       for (let y = 0; y < (this.height); y++) {
         for (let x = 0; x < (this.width); x++) {
           if (bitmapNew[x] === undefined) {

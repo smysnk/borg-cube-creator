@@ -10,11 +10,10 @@ import IslandLayerStrategy from './borg/layerStrategy/IslandLayerStrategy';
 import BridgeLayerStrategy from './borg/layerStrategy/BridgeLayerStrategy';
 
 let layerStrategies = [
-  new SolidLayerStrategy(),
-  new IslandLayerStrategy({ spacing: 1 }),
-  // new BridgeLayerStrategy(),
-  new IslandLayerStrategy({ spacing: 2 }),
-  new IslandLayerStrategy(),
+  new SolidLayerStrategy({ height: 1 }),
+  new IslandLayerStrategy({ height: 1, spacing: 1 }),
+  new IslandLayerStrategy({ height: 1, spacing: 1 }),
+  new IslandLayerStrategy({ height: 1, spacing: 2, aboveHorizon: true }),
 ];
 
 const panel = new Panel(50, layerStrategies);
@@ -42,8 +41,11 @@ const { union, subtract, intersect } = jscad.booleans;
 const { degToRad } = jscad.utils;
 
 function main () {
-  const terrain = []
+  const terrain:any = [];
 
+  let layerHeight = 0;
+  let layerHeightBelowHorizon = 0;
+  
   const square = polygon({ points: [[0, 0], [gridSize, 0], [gridSize, gridSize], [0, gridSize]] });
   for (let layer = 0; layer < panel.layerStrategies.length; layer++) {
     for (let y = 0; y < panel.size; y++) {
@@ -51,22 +53,24 @@ function main () {
         if (panel.getSquare(layer, x, y)) {
           let startX = x * gridSize;
           let startY = y * gridSize;
-          const cube = extrudeLinear({ height: gridSize }, square);
-          terrain.push(translate([startX, startY, layer * gridSize], cube));
+          const cube = extrudeLinear({ height: panel.layerStrategies[layer].height * gridSize }, square);
+          terrain.push(translate([startX, startY, layerHeight * gridSize], cube));
         }
       }
     }
+    layerHeight += panel.layerStrategies[layer].height;
+    layerHeightBelowHorizon += (panel.layerStrategies[layer].aboveHorizon) ? 0 : panel.layerStrategies[layer].height;
   }
 
-  let trimEdges = [];
+  let trimEdges:any = [];
 
   // Trim edges
-  let height = (gridSize) * (panel.layerStrategies.length) + 1;  
+  let height = (gridSize) * (layerHeightBelowHorizon);
   
   const triangle = polygon({ points: [[0, 0], [height, 0], [height, height]] });
   let shape:any;
 
-  for (let i = 0; i < 4; i++) {       
+  for (let i = 0; i < 4; i++) {     
     shape = extrudeLinear({ height: gridSize * panel.size }, triangle)
     shape = rotateX(degToRad(90), shape);
     shape = rotateZ(degToRad(-90), shape);
@@ -80,7 +84,7 @@ function main () {
   }
 
   let supportWidth = 3;
-  let supports = [];
+  let supports:any = [];
   const support = polygon({ points: [[0, 0], [supportWidth, 0], [height + supportWidth - 1, height - 1],  [height, height - 1]] });
   for (let i = 0; i < 4; i++) {       
     shape = extrudeLinear({ height: gridSize * panel.size }, support)
@@ -113,5 +117,5 @@ const writeOutputDataToFile = (outputFile, outputData) => {
 }
 
 const blob = solidsAsBlob(main(), { format: 'stl' });
-writeOutputDataToFile('../test.stl', blob);
+writeOutputDataToFile('test.stl', blob);
 

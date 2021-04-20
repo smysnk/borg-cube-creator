@@ -30,7 +30,7 @@ const colors = [
 const Canvas = props => {
   const canvasRef = useRef(null)
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas:any = canvasRef.current;
     canvas.width = canvasSize;
     canvas.height = canvasSize;
 

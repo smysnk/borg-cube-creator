@@ -2,20 +2,24 @@ import Rectangle from '../shapes/Rectangle';
 
 export default class IslandLayerStrategy {
   currentId: any;
-  complete: any;
+  complete: boolean;
   spacing: any;
-  maxHeight: any;
+  maxLength: any;
   maxWidth: any;
+  height: any;
+  aboveHorizon: boolean;
 
-  constructor({ spacing = 2, maxWidth = 5, maxHeight = 20 } = {}) {
+  constructor({ spacing = 2, maxLength = 5, maxWidth = 20, height = 1, aboveHorizon = false } = {}) {
     this.currentId = 1;
     this.complete = false;
     this.spacing = spacing;
-    this.maxHeight = maxHeight;
+    this.maxLength = maxLength;
     this.maxWidth = maxWidth;
+    this.height = height;
+    this.aboveHorizon = aboveHorizon;
   }
 
-  tick(panel) {
+  tick(panel: any) {
     this.currentId += 1;
 
     let x = 0;
@@ -31,7 +35,7 @@ export default class IslandLayerStrategy {
     }
 
     if (valid) {
-      let shape = new Rectangle(this.maxWidth, this.maxHeight);
+      let shape = new Rectangle(this.maxLength, this.maxWidth);
       for (let shapeY = 0; shapeY < shape.length; shapeY++) {
         for (let shapeX = 0; shapeX < shape.width; shapeX++) {
           if (panel.canPlace(shapeX + x, shapeY + y, this.currentId)) {
