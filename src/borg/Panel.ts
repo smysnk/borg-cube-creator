@@ -93,4 +93,11 @@ export default class Panel {
     }
     return this.terrain[layer][x][y];
   }
+
+  get(x, y) {
+    if (x < 0 || y < 0 || x > this.size - 1 || y > this.size - 1) {
+      return 0;
+    }
+    return this.terrain[this.layerCurrent][x][y];
+  }
 }

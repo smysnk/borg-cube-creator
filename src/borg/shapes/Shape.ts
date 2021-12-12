@@ -1,19 +1,15 @@
 export default class Shape {
   initialized: any;
   id: any;
-  hp: any;
-  dead: any;
   offsetX: any;
   offsetY: any;
   width: any;
   height: any;
   bitmap: any;
 
-  constructor({ id, hp = 2 }) {
+  constructor({ id }) {
     this.initialized = false;
     this.id = id;
-    this.hp = hp;
-    this.dead = false;
   }
 
   reveal(targetX, targetY) {
@@ -25,7 +21,7 @@ export default class Shape {
       this.height = 1;
       this.bitmap = [];
       this.bitmap[0] = [];
-      this.bitmap[0][0] = this.hp;
+      this.bitmap[0][0] = 1;
       return;
     }
     let oldOffsetX = this.offsetX;
@@ -77,7 +73,7 @@ export default class Shape {
       }
       this.bitmap = bitmapNew;
     } else {
-      this.bitmap[targetX - this.offsetX][targetY - this.offsetY] = this.hp;
+      this.bitmap[targetX - this.offsetX][targetY - this.offsetY] = 1;
     }
   }
 
@@ -102,39 +98,34 @@ export default class Shape {
     return true;
   }
 
-  translateDecay(xDirection, yDirection, panel, layer) {
-    this.offsetX += xDirection;
-    this.offsetY += yDirection;
-    
-    let dead = true;
-    for (let yDecay = this.offsetY; yDecay < this.offsetY + this.height; yDecay++) {
-      for (let xDecay = this.offsetX; xDecay < this.offsetX + this.width; xDecay++) {
-        // If out of bounds, decay
-        if (xDecay < 0 || yDecay < 0 || xDecay > panel.size - 1 || yDecay > panel.size - 1) {
-          this.set(xDecay, yDecay, 0);
-          continue;
-        }
-
-        // If there is no square here ignore
-        if (this.get(xDecay, yDecay) === 0) {
-          continue;
-        }
-
-        if (panel.getSquare(layer, xDecay, yDecay) === 0) {
-          // Decay 2 if there is no island on the other side
-          // let value = this.get(xDecay, yDecay) - 1; 
-          let value = (panel.getSquare(layer, xDecay + xDirection, yDecay + yDirection) === 0) ? 0 : 1;
-          this.set(xDecay, yDecay, value);
-          if (value) {
-            dead = false;
-          }
-        } else {
-          dead = false;
-        }
-      
-      }
-    } 
-    this.dead = dead;
+  translate(x, y) {
+    this.offsetX += x;
+    this.offsetY += y;
   }
 
+  walk(f: Function) {
+    for (let y = 0; y < (this.height); y++) {
+      for (let x = 0; x < (this.width); x++) {
+        if (!this.bitmap[x][y]) {
+          continue;
+        }
+        f(this.offsetX + x, this.offsetY + y);
+      }
+    }
+  }
+
+  isEmpty() {
+    for (let y = 0; y < (this.height); y++) {
+      for (let x = 0; x < (this.width); x++) {
+        if (this.bitmap[x][y]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  decay(x, y) {
+    this.bitmap[x - this.offsetX][y - this.offsetY] = (this.bitmap[x - this.offsetX][y - this.offsetY] - 1 < 0) ? 0 : this.bitmap[x - this.offsetX][y - this.offsetY] - 1;
+  }
 }

@@ -1,0 +1,432 @@
+
+//			import * as THREE from '../build/three.module.js';
+
+import { OrbitControls } from './jsm/controls/OrbitControls.js';
+import { STLExporter } from './jsm/exporters/STLExporter.js';
+
+let scene, scene2, camera, camera2, controls, renderer, renderer2, exporter, mesh, grid, grid2, ground, meshes=[];
+let SHADOW = false
+let AXIS2 = true
+let CAM_DISTANCE = 100
+let renderTimeLimit = Date.now()
+let lastRender = true
+init();
+animate();
+
+
+function init() {
+
+  camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+  camera.position.set( 180, -180, 220 );
+  camera.up.set( 0, 0, 1 );
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color( 0xffffff );
+  //scene.fog = new THREE.Fog( 0xffffff, 200, 1000 );
+
+  exporter = new STLExporter();
+
+  //
+
+  const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
+  hemiLight.position.set( 0, 0, 2000 );
+  scene.add( hemiLight );
+
+  const directionalLight = new THREE.DirectionalLight( 0xffffff );
+  directionalLight.position.set( 0, 200, 100 );
+  directionalLight.castShadow = SHADOW;
+  if(SHADOW){				
+    directionalLight.shadow.camera.top = 180;
+    directionalLight.shadow.camera.bottom = - 100;
+    directionalLight.shadow.camera.left = - 120;
+    directionalLight.shadow.camera.right = 120;
+  }
+  scene.add( directionalLight );
+
+  // ground
+
+  ground = new THREE.Mesh( new THREE.PlaneBufferGeometry( 200, 200 ), new THREE.MeshPhongMaterial( { color: 0xffffff, depthWrite: false } ) );
+  // ground.rotation.x =  - Math.PI / 2;
+  // ground.rotation.y =  - Math.PI / 2;
+  ground.receiveShadow = SHADOW;
+  scene.add( ground );
+
+  grid = new THREE.GridHelper( 200, 20, 0x000000, 0x000000 );
+  grid.rotation.x = - Math.PI / 2;
+  // grid.rotation.y = - Math.PI / 2;
+  grid.material.opacity = 0.2;
+  grid.material.transparent = true;
+  scene.add( grid );
+
+
+  grid2 = new THREE.GridHelper( 200, 200, 0x000000, 0x000000 );
+  grid2.rotation.x = - Math.PI / 2;
+  // grid.rotation.y = - Math.PI / 2;
+  grid2.material.opacity = 0.1;
+  grid2.material.transparent = true;
+  scene.add( grid2 );
+
+  let axes = new THREE.AxesHelper( 10 );
+  scene.add( axes );
+
+  // export mesh
+
+  //
+
+  renderer = new THREE.WebGLRenderer( { antialias: true } );
+  renderer.setPixelRatio( window.devicePixelRatio );
+  renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.shadowMap.enabled = SHADOW;
+  document.body.appendChild( renderer.domElement );
+
+  //
+
+  controls = new OrbitControls( camera, renderer.domElement );
+  controls.target.set( 0, 0, 0 );
+  controls.update();
+  controls.addEventListener('change',function(){
+    moveRenderTimeLimit()
+    renderAxisChange()					
+  })
+
+  //
+
+  window.addEventListener( 'resize', onWindowResize, false );
+  let body = document.body
+  // body.addEventListener( 'mousemove', moveRenderTimeLimit );
+  // body.addEventListener( 'mousedown', moveRenderTimeLimit );
+  // body.addEventListener( 'drag', moveRenderTimeLimit );
+  // body.addEventListener( 'dragover', moveRenderTimeLimit );
+  function addClick(id,func){
+    const button = document.getElementById( id );
+    button.addEventListener( 'click', func );
+  }
+
+  if(AXIS2) makeAxis2()
+
+  addClick('exportASCII', exportASCII)
+  addClick('exportBinary', exportBinary)
+  loadModelFile()
+}
+
+function setVisible(id, v){
+  document.getElementById(id).style.display = v ? 'initial':'none'
+}
+
+function makeAxis2(){
+  renderer2 = new THREE.WebGLRenderer( { antialias: true , alpha:true} );
+  renderer2.setPixelRatio( window.devicePixelRatio );
+  renderer2.setSize( window.innerWidth, window.innerHeight );
+  renderer2.shadowMap.enabled = false;
+  renderer2.setClearColor( 0x000000, 0 )
+  let el = renderer2.domElement
+  let style = el.style
+  document.body.appendChild( el );
+  renderer2.setSize(100,100)
+  style.position = 'absolute';
+  style.top = '30px';
+  style.right = '30px'
+
+  camera2 = new THREE.PerspectiveCamera( 45, 1, 1, 1000 );
+  // camera2 = new THREE.OrthographicCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 );
+  camera2.position.set( 180, -180, 220 );
+  camera2.up.set( 0, 0, 1 );
+  camera2.lookAt( [0,0,0] )
+  
+  scene2 = new THREE.Scene();
+  // scene2.background = new THREE.Color( 0,0,0,0 );
+  let axes = new THREE.AxesHelper( 30 );
+  scene2.add( axes );
+  renderAxisChange()
+}
+
+let exportScene = {traverse:(callback)=>{  meshes.forEach(callback) }}
+
+function onWindowResize() {
+  moveRenderTimeLimit()
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize( window.innerWidth, window.innerHeight );
+
+}
+
+
+function moveRenderTimeLimit(offset = 500){
+  renderTimeLimit = Date.now() + offset
+}
+
+function animate() {
+
+  requestAnimationFrame( animate );
+  if(renderTimeLimit &&  Date.now() > renderTimeLimit){
+    if(lastRender){
+      setVisible('renderIndicator', lastRender = false)
+    }
+    return;
+  } 
+  if(!lastRender){
+    setVisible('renderIndicator', lastRender = true)
+  }
+
+  //console.log('render');
+    controls.update();
+  renderer.render( scene, camera );							    
+}
+
+function renderAxisChange(){
+  camera2.position.copy( camera.position );
+  camera2.position.sub( controls.target ); // added by @libe
+  camera2.position.setLength( CAM_DISTANCE );
+    camera2.lookAt( 0,0,0 );				
+
+  renderer2.render(scene2, camera2)				
+}
+
+function exportASCII() {
+
+  const result = exporter.parse( exportScene );
+  saveString( result, 'box.stl' );
+
+}
+
+function exportBinary() {
+
+  const result = exporter.parse( exportScene, { binary: true } );
+  saveArrayBuffer( result, 'box.stl' );
+
+}
+
+const link = document.createElement( 'a' );
+link.style.display = 'none';
+document.body.appendChild( link );
+
+function save( blob, filename ) {
+
+  link.href = URL.createObjectURL( blob );
+  link.download = filename;
+  link.click();
+
+}
+
+function saveString( text, filename ) {
+
+  save( new Blob( [ text ], { type: 'text/plain' } ), filename );
+
+}
+
+function saveArrayBuffer( buffer, filename ) {
+
+  save( new Blob( [ buffer ], { type: 'application/octet-stream' } ), filename );
+
+}
+
+const _material = new THREE.MeshPhongMaterial( { color: 0x0084d1, flatShading: true } );
+
+function converVector3(v){ return new THREE.Vector3(v[0], v[1], v[2]); }
+let normal = new THREE.Vector3(0, 0, 1)
+let geometryCachekey = Symbol('geometryCachekey')
+function CSG2Geom(csg){
+  if(csg.polygons[geometryCachekey]) return csg.polygons[geometryCachekey]
+
+    const vertices = []
+    const indices  = []
+    let idx = 0
+
+    const pointAdd = (v) =>{
+        if (v.index === undefined){
+            v.index = idx++
+            vertices.push(v[0], v[1], v[2] || 0)
+        }
+    }
+
+    for (let poly of csg.polygons){
+      let arr = poly.vertices
+        arr.forEach(pointAdd)
+        let first = arr[0].index
+        for(let i=2; i<arr.length; i++){
+          indices.push(first, arr[i-1].index, arr[i].index)
+        }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices),3))
+    geo.setIndex(indices)
+    
+    csg.polygons[geometryCachekey] = geo
+
+    return geo;
+}
+
+function CSG2Mesh(csg){
+  let material = _material
+  if(csg.color){
+    let c = csg.color
+    material = new THREE.MeshPhongMaterial( { color: new THREE.Color(c[0],c[1],c[2]), flatShading: true, opacity: c[3] === void 0 ? 1:c[3], transparent: c[3] != 1 && c[3] !== void 0} );
+  }
+    let mesh = new THREE.Mesh(CSG2Geom(csg), material);
+  if(csg.transforms) mesh.applyMatrix4({elements:csg.transforms})
+  return mesh
+}
+
+var _lineMaterial = new THREE.LineBasicMaterial( { color: 0x0000ff } )
+function CSG2Line(csg){
+  let material = _lineMaterial
+  if(csg.color){
+    let c = csg.color
+    material = new THREE.LineBasicMaterial( { color: new THREE.Color(c[0],c[1],c[2]), opacity: c[3] === void 0 ? 1:c[3], transparent: c[3] != 1 && c[3] !== void 0} )
+  }
+  var points = csg.points.map(p=>new THREE.Vector3( p[0], p[1], p[2] || 0 ))
+  if(csg.isClosed) points.push(points[0])
+  var geom = new THREE.BufferGeometry().setFromPoints( points )
+  if(csg.transforms) geom.applyMatrix4({elements:csg.transforms})
+  return new THREE.Line( geom, material )
+}
+
+function CSG2Object3D(csg){
+  if(csg instanceof CachedGeom){
+    if(csg.cached.object3D){
+      let ret = new THREE.Mesh(csg.cached.object3D.geometry,csg.cached.object3D.material)
+      ret.applyMatrix4({elements:csg.transforms})
+      return ret
+    }else{
+      csg.cached.object3D = CSG2Object3D(csg.cached.csg)
+      console.log('CachedGeom',csg, csg.cached.object3D);
+      csg.cached.object3D.applyMatrix4({elements:csg.transforms})
+      return csg.cached.object3D
+    }
+  }
+
+  if(csg.polygons) return CSG2Mesh(csg)
+  if(csg.points) return CSG2Line(csg)
+}
+
+function DrawCSG(csg){
+  let mesh;
+  if(csg instanceof Array){
+    return csg.map(c=>DrawCSG(c))
+  }
+
+  if(csg instanceof THREE.Object3D || csg instanceof THREE.Mesh){
+    mesh = csg
+  }else if(csg instanceof THREE.Geometry || csg instanceof THREE.BufferGeometry){
+    mesh = new THREE.Mesh(csg, _material);
+  }else{
+    mesh = CSG2Object3D(csg)
+  }
+    
+    scene.add(mesh);
+    meshes.push(mesh);
+    moveRenderTimeLimit()
+    return mesh
+}
+
+function clearScene(){
+  scene.remove(...meshes);
+  meshes.forEach(m=>m.geometry.dispose())
+  meshes.length=0;
+  moveRenderTimeLimit()			
+}
+
+
+window.clearScene = clearScene
+// window.THREE =THREE
+window.scene = scene
+window.grid = grid
+window.grid2 = grid2
+window.ground = ground
+window.meshes = meshes
+window.camera = camera
+window.DrawCSG = DrawCSG
+window.CSG2Geom = CSG2Geom
+window.moveRenderTimeLimit = moveRenderTimeLimit
+window.updateModel = updateModel
+</script>
+<script type="text/javascript">
+let geoms = [];
+
+function inpValue(id){
+  return document.getElementById('input_'+id).value
+}
+
+function updateGrid(){
+  var showGrid = document.getElementById('grid_chb').checked
+  grid.visible = showGrid
+  grid2.visible = showGrid
+  ground.visible = showGrid
+  moveRenderTimeLimit()
+}
+
+function initForm(){
+let params = getParameterDefinitions();
+// let sel = document.getElementById('input_piece')
+// params[1].values.forEach(o=>sel.add(new Option(o)))		
+}
+
+function initModel(){
+initForm()
+updateModel()
+}
+
+let _updateModel_timer
+let _logModel_timer
+let _updating = false
+function updateModel(){
+if(_updating){		
+clearTimeout(_updateModel_timer)
+_updateModel_timer = setTimeout(_updateModel,10)
+}else{
+_updateModel()
+}
+}
+
+function _updateModel() {
+  _updating = true
+  var params = {}
+  var form = document.getElementById('params_form');
+  for(let i=0; i<form.elements.length; i++){
+  let elem = form.elements[i]
+
+  let name = elem.name
+  if(!name) continue;
+
+  let value = elem.value
+  if(elem.tagName == 'INPUT'){
+    if(elem.type == 'number' || elem.type == 'range') value = parseFloat(value)
+    if(elem.type == 'checkbox') value = elem.checked
+    if(elem.type == 'range'){
+      let label = elem.previousElementSibling
+      if(label.tagName == 'LABEL'){
+        let info = label.querySelector('I')
+        if(info) info.innerHTML = '('+value+')'
+      }
+    }
+  }
+  params[name] = value
+}
+
+let time = Date.now(); 
+clearScene();
+let csg = main(params); 
+let msToBuild = Date.now() - time
+time = Date.now(); 
+DrawCSG(csg); 
+let msToBuild2 = Date.now() - time
+clearTimeout(_logModel_timer)
+
+_logModel_timer = setTimeout(function(){
+document.getElementById('render_info').innerHTML = 'model gen: '+msToBuild.toFixed(2)+' ms';
+console.log( msToBuild, ' ms to build csg in jscad'); 
+console.log( msToBuild2, ' ms to build THREE meshes');			
+},200)
+
+_updating = false
+}
+
+function addScript(source, callback, errback) {
+  var tag = document.createElement("script");
+  tag.type = "text/javascript";
+  tag.src = source;
+  tag.onload = callback || function(){console.log('laoded ',source );};
+  tag.onerror = errback;
+  document.head.append(tag);
+}

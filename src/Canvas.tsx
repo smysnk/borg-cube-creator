@@ -1,31 +1,14 @@
 import React, { useEffect, useRef } from "react";
 
-import Panel from './borg/Panel';
-import SolidLayerStrategy from './borg/layerStrategy/SolidLayerStrategy';
-import IslandLayerStrategy from './borg/layerStrategy/IslandLayerStrategy';
-import BridgeLayerStrategy from './borg/layerStrategy/BridgeLayerStrategy';
-
-let layerStrategies = [
-  new SolidLayerStrategy(),
-  new IslandLayerStrategy({ spacing: 1 }),
-  // new BridgeLayerStrategy(),
-  new IslandLayerStrategy({ spacing: 2 }),
-  // new IslandLayerStrategy(),
-];
-
-const panel = new Panel(250, layerStrategies);
-
+import panel from './strategy';
 const canvasSize = 500;
 const gridSize = canvasSize / panel.size;
 
 const colors = [
   'rgba(255, 0, 0, 0.5)',
   'rgba(0, 255, 0, 0.5)',
-  'rgba(0, 0, 255, 0.5)',
+  'rgba(100, 100, 100, 0.5)',
 ];
-// const colors = [
-//   'rgba(0, 0, 0, 0.5)',
-// ];
 
 const Canvas = props => {
   const canvasRef = useRef(null)

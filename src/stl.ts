@@ -4,26 +4,8 @@ import stlSerializer from '@jscad/stl-serializer';
 import { deserializers, solidsAsBlob } from '@jscad/io';
 import fs from 'fs';
 
-import Panel from './borg/Panel';
-import SolidLayerStrategy from './borg/layerStrategy/SolidLayerStrategy';
-import IslandLayerStrategy from './borg/layerStrategy/IslandLayerStrategy';
-import BridgeLayerStrategy from './borg/layerStrategy/BridgeLayerStrategy';
-
-let layerStrategies = [
-  new SolidLayerStrategy({ height: 1 }),
-  new IslandLayerStrategy({ height: 1, spacing: 1 }),
-  new IslandLayerStrategy({ height: 1, spacing: 1 }),
-  new IslandLayerStrategy({ height: 1, spacing: 2, aboveHorizon: true }),
-];
-
-const panel = new Panel(50, layerStrategies);
-const gridSize = 1;
-
-const colors = [
-  'rgba(255, 0, 0, 0.5)',
-  'rgba(0, 255, 0, 0.5)',
-  'rgba(0, 0, 255, 0.5)',
-];
+import panel from './strategy';
+const gridSize = 0.5;
 
 let start = Date.now();
 while (!panel.complete) { 
@@ -65,8 +47,7 @@ function main () {
   let trimEdges:any = [];
 
   // Trim edges
-  let height = (gridSize) * (layerHeightBelowHorizon);
-  
+  let height = (gridSize) * (layerHeightBelowHorizon + 1);
   const triangle = polygon({ points: [[0, 0], [height, 0], [height, height]] });
   let shape:any;
 
@@ -83,24 +64,25 @@ function main () {
     trimEdges.push(shape);
   }
 
-  let supportWidth = 3;
-  let supports:any = [];
-  const support = polygon({ points: [[0, 0], [supportWidth, 0], [height + supportWidth - 1, height - 1],  [height, height - 1]] });
-  for (let i = 0; i < 4; i++) {       
-    shape = extrudeLinear({ height: gridSize * panel.size }, support)
-    shape = rotateX(degToRad(90), shape);
-    shape = rotateZ(degToRad(-90), shape);
-    shape = translate([gridSize * panel.size, height + 2, 0], shape);
-    for (let j = 0; j <= i; j++) {
-      shape = rotateZ(degToRad(-90), shape);
-      shape = translate([0, gridSize * panel.size, 0], shape);
-    }
+  // let supportWidth = 3;
+  // let supports:any = [];   
+  // const support = polygon({ points: [[0, 0], [supportWidth, 0], [height + supportWidth - 1, height - 1],  [height, height - 1]] });
+  // for (let i = 0; i < 4; i++) {       
+  //   shape = extrudeLinear({ height: gridSize * panel.size }, support)
+  //   shape = rotateX(degToRad(90), shape);
+  //   shape = rotateZ(degToRad(-90), shape);
+  //   shape = translate([gridSize * panel.size, height + 2, 0], shape);
+  //   for (let j = 0; j <= i; j++) {
+  //     shape = rotateZ(degToRad(-90), shape);
+  //     shape = translate([0, gridSize * panel.size, 0], shape);
+  //   }
 
-    supports.push(shape);
-  }
+  //   supports.push(shape);
+  // }
 
   // return [union([...terrain, supports])];
-  return subtract(union([...terrain, supports]), trimEdges);
+  // return subtract(union([...terrain]), trimEdges);
+  return trimEdges;
   // return [union(shapes)];
 }
 
