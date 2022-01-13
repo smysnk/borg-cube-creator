@@ -7,9 +7,9 @@ import BridgeLayerStrategy from './borg/layerStrategy/BridgeLayerStrategy';
 
 let layerStrategies = [
   new SolidLayerStrategy(),
-  new IslandLayerStrategy({ spacing: 1 }),
+  // new IslandLayerStrategy({ spacing: 1 }),
   // new BridgeLayerStrategy(),
-  new IslandLayerStrategy({ spacing: 2 }),
+  // new IslandLayerStrategy({ spacing: 2 }),
   // new IslandLayerStrategy(),
 ];
 

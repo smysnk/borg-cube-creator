@@ -16,7 +16,7 @@ let layerStrategies = [
   new IslandLayerStrategy({ height: 1, spacing: 2, aboveHorizon: true }),
 ];
 
-const panel = new Panel(50, layerStrategies);
+const panel = new Panel(60, layerStrategies);
 const gridSize = 1;
 
 const colors = [
@@ -83,7 +83,8 @@ function main () {
     trimEdges.push(shape);
   }
 
-  let supportWidth = 3;
+  // Supports around the edges
+  let supportWidth = 3; 
   let supports:any = [];
   const support = polygon({ points: [[0, 0], [supportWidth, 0], [height + supportWidth - 1, height - 1],  [height, height - 1]] });
   for (let i = 0; i < 4; i++) {       
@@ -99,8 +100,37 @@ function main () {
     supports.push(shape);
   }
 
-  // return [union([...terrain, supports])];
-  return subtract(union([...terrain, supports]), trimEdges);
+  let offset =  (panel.size / 2);
+
+  shape = subtract(union([...terrain, supports]), trimEdges);
+  
+  // Solar Panel Cuttout
+  // let solarPanelSize = 40.1;
+  // shape = subtract(shape, translate([offset, offset, 3], cuboid({ size: [solarPanelSize, solarPanelSize, 5]})));
+  // shape = subtract(shape, translate([offset, offset, 0], cuboid({ size: [solarPanelSize - 10, solarPanelSize, 2]})));
+
+  // // Antenna
+  // let antennaHeight = 15;
+  // let antennaRadius = 12.5 / 2;
+  // let antennaWallWidth = 6.2;
+  // shape = union([shape, translate([offset, offset, antennaHeight / 2], cylinder({ height: antennaHeight, radius: antennaRadius + antennaWallWidth }))])
+  // shape = subtract(shape, translate([offset, offset, antennaHeight / 2], cylinder({ height: antennaHeight, radius: antennaRadius })))
+
+  // // Screw hole
+  // let screwHeadLength = 6;
+  // let screwLength = 20 + screwHeadLength;
+  // let screwOffsetZ = antennaHeight - 6;
+  // let screw = translate([0, 0, screwLength / 2], cylinder({ height: screwLength, radius: 2.7 / 2.0 }));
+  // // screw = union(screw, cylinder({ height: screwHeadLength, radius: 5.75 / 2.0 }));
+  // screw = rotateX(degToRad(-90), screw);
+  // screw = translate([offset, offset - screwLength, screwOffsetZ], screw);
+  
+  // shape = subtract(shape, screw);
+  // shape = union(shape, screw);
+
+  // return screw;
+
+  return shape;
   // return [union(shapes)];
 }
 
